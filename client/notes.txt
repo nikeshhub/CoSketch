@@ -1,0 +1,5 @@
+- canvas
+-rough.js for shapes
+will be line, rectangle, pencil, textareas, undo redo, zoom
+socket.io for  real time communication with other users
+node.js as a server to handle the http request and web socket
