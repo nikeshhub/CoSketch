@@ -124,6 +124,7 @@ const CollaborativeSessionPage: React.FC<CollaborativeSessionPageProps> = ({
 
       element.forEach((el) => {
         ctx.beginPath();
+        ctx.lineWidth = 3;
         ctx.moveTo(el.offsetX, el.offsetY);
         if (el.type === "line" || el.type === "pencil") {
           el.path.forEach((point) => {
