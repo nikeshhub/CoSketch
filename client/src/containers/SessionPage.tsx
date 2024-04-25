@@ -35,7 +35,13 @@ const SessionPage: React.FC = () => {
     const storedElements = localStorage.getItem("elements");
     return storedElements ? JSON.parse(storedElements) : [];
   });
+  const [selectedElement, setSelectedElement] = useState<Element | null>(null);
+  const [shapesInitialPosition, setShapesInitialPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const [draw, setDraw] = useState(false);
+  const [move, setMove] = useState(false);
   const [showTextarea, setShowTextarea] = useState(false);
   const [textareaPosition, setTextareaPosition] = useState({ x: 0, y: 0 });
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -58,8 +64,17 @@ const SessionPage: React.FC = () => {
       const ctx = ctxRef.current as CanvasRenderingContext2D;
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       element.forEach((el) => {
-        ctx.beginPath();
-        ctx.moveTo(el.offsetX, el.offsetY);
+        if (selectedElement && el === selectedElement && move) {
+          // console.log("hi");
+          ctx.beginPath();
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = "blue";
+        } else {
+          ctx.beginPath();
+          ctx.lineWidth = 3;
+          ctx.moveTo(el.offsetX, el.offsetY);
+          ctx.strokeStyle = el.stroke || "black";
+        }
         if (el.type === "line" || el.type === "pencil") {
           el.path.forEach((point) => {
             ctx.lineTo(point[0], point[1]);
@@ -89,7 +104,7 @@ const SessionPage: React.FC = () => {
         }
       });
     }
-  }, [element]);
+  }, [element, move, selectedElement]);
 
   useEffect(() => {
     localStorage.setItem("elements", JSON.stringify(element));
@@ -103,6 +118,48 @@ const SessionPage: React.FC = () => {
         setTextareaPosition({ x: offsetX, y: offsetY });
         console.log(textareaPosition);
       }
+    } else if (type === "select") {
+      //select
+      const clickedElement = element.find((el) => {
+        if (el.type === "line" || el.type === "pencil") {
+          return el.path.some(
+            ([x, y]) => Math.abs(x - offsetX) <= 5 && Math.abs(y - offsetY) <= 5
+          );
+        } else if (el.type === "rectangle") {
+          const [x, y] = el.path[el.path.length - 1];
+          return (
+            offsetX >= el.offsetX &&
+            offsetX <= x &&
+            offsetY >= el.offsetY &&
+            offsetY <= y
+          );
+        } else if (el.type === "circle") {
+          const [x, y] = el.path[el.path.length - 1];
+          const radius = Math.sqrt(
+            Math.pow(x - el.offsetX, 2) + Math.pow(y - el.offsetY, 2)
+          );
+          return (
+            Math.sqrt(
+              Math.pow(offsetX - el.offsetX, 2) +
+                Math.pow(offsetY - el.offsetY, 2)
+            ) <= radius
+          );
+        } else if (el.type === "text") {
+          return (
+            offsetX >= el.offsetX &&
+            offsetX <= el.offsetX + 100 &&
+            offsetY >= el.offsetY &&
+            offsetY <= el.offsetY + 20
+          );
+        }
+        return false;
+      });
+
+      if (clickedElement) {
+        setMove(true);
+        setSelectedElement(clickedElement);
+        setShapesInitialPosition({ x: offsetX, y: offsetY });
+      }
     } else {
       setElement((prev) => [
         ...prev,
@@ -114,6 +171,7 @@ const SessionPage: React.FC = () => {
 
   const handleMouseUp = () => {
     setDraw(false);
+    setMove(false);
   };
 
   const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -138,6 +196,26 @@ const SessionPage: React.FC = () => {
           [offsetX, offsetY] as [number, number],
         ];
         newElements[newElements.length - 1] = { ...lastElement, path: newPath };
+        return newElements;
+      });
+    } else if (move) {
+      setShapesInitialPosition({ x: offsetX, y: offsetY });
+      setElement((prev) => {
+        const newElements = prev.map((el) => {
+          if (el === selectedElement) {
+            const deltaX = el.offsetX - shapesInitialPosition.x;
+            const deltaY = el.offsetY - shapesInitialPosition.y;
+            console.log(deltaY, deltaX);
+            const newPath = el.path.map(([x, y]) => [x + deltaX, y + deltaY]);
+            return {
+              ...el,
+              offsetX: el.offsetX + deltaX,
+              offsetY: el.offsetY + deltaY,
+              path: newPath,
+            };
+          }
+          return el;
+        });
         return newElements;
       });
     }
