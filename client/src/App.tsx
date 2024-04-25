@@ -5,9 +5,7 @@
 import {
   Navigate,
   Outlet,
-  Route,
   RouterProvider,
-  Routes,
   createBrowserRouter,
 } from "react-router-dom";
 // import CreateSession from "./containers/StartSession";
@@ -52,7 +50,7 @@ const App = () => {
       children: [
         {
           path: "/",
-          element: <SessionPage socket={socket} />,
+          element: <SessionPage />,
         },
         {
           path: "/session/:sessionID",
@@ -78,18 +76,7 @@ const App = () => {
       element: <Login />,
     },
   ]);
-  return (
-    <RouterProvider router={router}></RouterProvider>
-    // <Routes>
-    //   {/* <Route path="/" element={<CreateSession />} /> */}
-    //   <Route path="/" element={<SessionPage />} />
-    //   <Route path="session/:sessionID" element={<SessionPage />} />
-    //   <Route path="signup" element={<RegisterPage />} />
-    //   <Route path="verify" element={<VerifyEmailPage />} />
-    //   <Route path="verify-email" element={<VerifySuccessPage />} />
-    //   <Route path="login" element={<Login />} />
-    // </Routes>
-  );
+  return <RouterProvider router={router}></RouterProvider>;
 };
 
 export default App;
